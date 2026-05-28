@@ -1,0 +1,44 @@
+# 1. Agregamos 'render_template' a las importaciones de Flask
+from flask import Flask, request, jsonify, render_template
+import requests
+
+app = Flask(__name__)
+
+# 2. Modificamos la ruta raíz para que devuelva el archivo index.html
+@app.route("/")
+def home():
+    # Flask buscará automáticamente dentro de la carpeta 'templates'
+    return render_template("index.html")
+
+
+# --- TU RUTA DE CONSEJOS (MANTÉNLA IGUAL) ---
+@app.route("/get-advice", methods=["GET"])
+def get_advice():
+    try:
+        response = requests.get("https://api.adviceslip.com/advice")
+        response.raise_for_status()
+        advice_data = response.json()
+        
+        res = jsonify(advice_data)
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
+    except requests.exceptions.RequestException as e:
+        error_res = jsonify({"error": "No se pudo obtener el consejo", "details": str(e)})
+        error_res.headers.add("Access-Control-Allow-Origin", "*")
+        return error_res, 500
+
+
+# --- OTRAS RUTAS (OPCIONALES) ---
+@app.route("/get-user/<user_id>")
+def get_user(user_id):
+    user_data = {"user_id": user_id, "name": "John Doe", "email": "johndoe@example.com"}
+    extra = request.args.get("extra")
+    if extra: user_data["extra"] = extra
+    res = jsonify(user_data)
+    res.headers.add("Access-Control-Allow-Origin", "*")
+    return res, 200
+
+@app.route("/create-user", methods=["POST"])
+def create_user():
+    data = request.get_json()
+    res = jsonify(data)
